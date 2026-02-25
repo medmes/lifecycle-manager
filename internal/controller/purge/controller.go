@@ -51,12 +51,12 @@ const (
 type Reconciler struct {
 	client.Client
 	event.Event
+	RateLimiter workqueue.TypedRateLimiter[ctrl.Request]
 
 	SkrContextFactory     remote.SkrContextProvider
 	PurgeFinalizerTimeout time.Duration
 	SkipCRDs              matcher.CRDMatcherFunc
 	Metrics               *metrics.PurgeMetrics
-	RateLimiter           workqueue.TypedRateLimiter[ctrl.Request]
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

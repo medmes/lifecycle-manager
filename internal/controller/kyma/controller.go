@@ -111,6 +111,7 @@ type Reconciler struct {
 	client.Client
 	event.Event
 	queue.RequeueIntervals
+	RateLimiter workqueue.TypedRateLimiter[ctrl.Request]
 
 	Config               ReconcilerConfig
 	SkrContextFactory    remote.SkrContextProvider
@@ -127,8 +128,6 @@ type Reconciler struct {
 	DeletionEvents  DeletionEventRecorder
 	DeletionService DeletionService
 	LookupService   LookupService
-
-	RateLimiter workqueue.TypedRateLimiter[ctrl.Request]
 }
 
 // Reconcile reconciles Kyma resources.

@@ -58,13 +58,13 @@ type Reconciler struct {
 	client.Client
 	event.Event
 	queue.RequeueIntervals
+	RateLimiter workqueue.TypedRateLimiter[ctrl.Request]
 
 	IstioClient           *istio.Client
 	VirtualServiceFactory istio.VirtualServiceFactory
 	RestConfig            *rest.Config
 	Scheme                *machineryruntime.Scheme
 	IstioGatewayNamespace string
-	RateLimiter           workqueue.TypedRateLimiter[ctrl.Request]
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

@@ -173,7 +173,7 @@ var _ = BeforeSuite(func() {
 		Watches(&apicorev1.Secret{}, handler.Funcs{}).
 		WithOptions(
 			ctrlruntime.Options{
-				RateLimiter: rateLimiter,
+				RateLimiter:             rateLimiter,
 				MaxConcurrentReconciles: 1,
 			},
 		).Complete(reconciler)
