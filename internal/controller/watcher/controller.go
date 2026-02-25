@@ -24,6 +24,7 @@ import (
 	apimetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	machineryruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -63,6 +64,7 @@ type Reconciler struct {
 	RestConfig            *rest.Config
 	Scheme                *machineryruntime.Scheme
 	IstioGatewayNamespace string
+	RateLimiter           workqueue.TypedRateLimiter[ctrl.Request]
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -90,12 +92,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		if err := r.updateFinalizer(ctx, watcher); err != nil {
 			return ctrl.Result{}, err
 		}
-		return ctrl.Result{RequeueAfter: queue.ImmediateRequeue}, nil
+		return ctrl.Result{RequeueAfter: r.RateLimiter.When(req)}, nil
 	}
 
 	watcher.InitializeConditions()
 
-	return r.stateHandling(ctx, watcher)
+	return r.stateHandling(ctx, req, watcher)
 }
 
 func (r *Reconciler) updateFinalizer(ctx context.Context, watcher *v1beta2.Watcher) error {
@@ -107,14 +109,14 @@ func (r *Reconciler) updateFinalizer(ctx context.Context, watcher *v1beta2.Watch
 	return nil
 }
 
-func (r *Reconciler) stateHandling(ctx context.Context, watcher *v1beta2.Watcher) (ctrl.Result, error) {
+func (r *Reconciler) stateHandling(ctx context.Context, req ctrl.Request, watcher *v1beta2.Watcher) (ctrl.Result, error) {
 	switch watcher.Status.State {
 	case "":
 		return r.updateWatcherState(ctx, watcher, shared.StateProcessing, nil)
 	case shared.StateProcessing:
 		return r.handleProcessingState(ctx, watcher)
 	case shared.StateDeleting:
-		return r.handleDeletingState(ctx, watcher)
+		return r.handleDeletingState(ctx, req, watcher)
 	case shared.StateError:
 		return r.handleProcessingState(ctx, watcher)
 	case shared.StateReady, shared.StateWarning:
@@ -126,7 +128,7 @@ func (r *Reconciler) stateHandling(ctx context.Context, watcher *v1beta2.Watcher
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) handleDeletingState(ctx context.Context, watcher *v1beta2.Watcher) (ctrl.Result, error) {
+func (r *Reconciler) handleDeletingState(ctx context.Context, req ctrl.Request, watcher *v1beta2.Watcher) (ctrl.Result, error) {
 	err := r.IstioClient.DeleteVirtualService(ctx, watcher.GetName(), watcher.GetNamespace())
 	if err != nil && !util.IsNotFound(err) {
 		vsConfigDelErr := fmt.Errorf("failed to delete virtual service (config): %w", err)
@@ -139,7 +141,7 @@ func (r *Reconciler) handleDeletingState(ctx context.Context, watcher *v1beta2.W
 	if err := r.updateFinalizer(ctx, watcher); err != nil {
 		return ctrl.Result{}, err
 	}
-	return ctrl.Result{RequeueAfter: queue.ImmediateRequeue}, nil
+	return ctrl.Result{RequeueAfter: r.RateLimiter.When(req)}, nil
 }
 
 func (r *Reconciler) handleProcessingState(ctx context.Context, watcherCR *v1beta2.Watcher) (ctrl.Result, error) {
