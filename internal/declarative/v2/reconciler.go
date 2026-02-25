@@ -304,7 +304,8 @@ func (r *Reconciler) handleLabelsRemovalFinalizer(ctx context.Context, req ctrl.
 	return ctrl.Result{RequeueAfter: r.rateLimiter.When(req)}, nil
 }
 
-func (r *Reconciler) cleanupManifest(ctx context.Context, req ctrl.Request, manifest *v1beta2.Manifest, manifestStatus shared.Status,
+func (r *Reconciler) cleanupManifest(
+	ctx context.Context, req ctrl.Request, manifest *v1beta2.Manifest, manifestStatus shared.Status,
 	requeueReason metrics.ManifestRequeueReason, originalErr error,
 ) (ctrl.Result, error) {
 	err := r.cleanupMetrics(manifest)

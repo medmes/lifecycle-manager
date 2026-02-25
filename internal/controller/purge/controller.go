@@ -51,6 +51,7 @@ const (
 type Reconciler struct {
 	client.Client
 	event.Event
+
 	RateLimiter workqueue.TypedRateLimiter[ctrl.Request]
 
 	SkrContextFactory     remote.SkrContextProvider
@@ -135,7 +136,9 @@ func (r *Reconciler) handleRemovingPurgeFinalizerFailedError(
 	return ctrl.Result{}, err
 }
 
-func (r *Reconciler) handleSkrNotFoundError(ctx context.Context, req ctrl.Request, kyma *v1beta2.Kyma, err error) (ctrl.Result, error) {
+func (r *Reconciler) handleSkrNotFoundError(
+	ctx context.Context, req ctrl.Request, kyma *v1beta2.Kyma, err error,
+) (ctrl.Result, error) {
 	if util.IsNotFound(err) {
 		dropped, err := r.dropPurgeFinalizer(ctx, kyma)
 		if err != nil {

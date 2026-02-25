@@ -58,6 +58,7 @@ type Reconciler struct {
 	client.Client
 	event.Event
 	queue.RequeueIntervals
+
 	RateLimiter workqueue.TypedRateLimiter[ctrl.Request]
 
 	IstioClient           *istio.Client
@@ -109,7 +110,9 @@ func (r *Reconciler) updateFinalizer(ctx context.Context, watcher *v1beta2.Watch
 	return nil
 }
 
-func (r *Reconciler) stateHandling(ctx context.Context, req ctrl.Request, watcher *v1beta2.Watcher) (ctrl.Result, error) {
+func (r *Reconciler) stateHandling(
+	ctx context.Context, req ctrl.Request, watcher *v1beta2.Watcher,
+) (ctrl.Result, error) {
 	switch watcher.Status.State {
 	case "":
 		return r.updateWatcherState(ctx, watcher, shared.StateProcessing, nil)
@@ -128,7 +131,9 @@ func (r *Reconciler) stateHandling(ctx context.Context, req ctrl.Request, watche
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) handleDeletingState(ctx context.Context, req ctrl.Request, watcher *v1beta2.Watcher) (ctrl.Result, error) {
+func (r *Reconciler) handleDeletingState(
+	ctx context.Context, req ctrl.Request, watcher *v1beta2.Watcher,
+) (ctrl.Result, error) {
 	err := r.IstioClient.DeleteVirtualService(ctx, watcher.GetName(), watcher.GetNamespace())
 	if err != nil && !util.IsNotFound(err) {
 		vsConfigDelErr := fmt.Errorf("failed to delete virtual service (config): %w", err)

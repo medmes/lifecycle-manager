@@ -572,7 +572,8 @@ func setupManifestReconciler(mgr ctrl.Manager,
 		Warning: flagVar.ManifestRequeueWarningInterval,
 		Jitter: queue.NewRequeueJitter(flagVar.ManifestRequeueJitterProbability,
 			flagVar.ManifestRequeueJitterPercentage),
-	}, options.RateLimiter, metrics.NewManifestMetrics(sharedMetrics), mandatoryModulesMetrics, manifestClient, orphanDetectionService,
+	}, options.RateLimiter,
+		metrics.NewManifestMetrics(sharedMetrics), mandatoryModulesMetrics, manifestClient, orphanDetectionService,
 		specResolver, clientCache, skrClient, kcpClient, cachedManifestParser, customStateCheck,
 		flagVar.SkrImagePullSecret); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Manifest")

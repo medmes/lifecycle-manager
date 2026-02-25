@@ -111,6 +111,7 @@ type Reconciler struct {
 	client.Client
 	event.Event
 	queue.RequeueIntervals
+
 	RateLimiter workqueue.TypedRateLimiter[ctrl.Request]
 
 	Config               ReconcilerConfig
@@ -493,7 +494,9 @@ func (r *Reconciler) processKymaState(ctx context.Context, req ctrl.Request, kym
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) handleInitialState(ctx context.Context, req ctrl.Request, kyma *v1beta2.Kyma) (ctrl.Result, error) {
+func (r *Reconciler) handleInitialState(
+	ctx context.Context, req ctrl.Request, kyma *v1beta2.Kyma,
+) (ctrl.Result, error) {
 	if err := r.updateStatus(ctx, kyma, shared.StateProcessing, "started processing"); err != nil {
 		r.Metrics.RecordRequeueReason(metrics.InitialStateHandling, queue.UnexpectedRequeue)
 		return ctrl.Result{}, err
@@ -577,7 +580,9 @@ func checkSKRWebhookReadiness(ctx context.Context, skrClient *remote.SkrContext,
 	return nil
 }
 
-func (r *Reconciler) handleDeletingState(ctx context.Context, req ctrl.Request, kyma *v1beta2.Kyma) (ctrl.Result, error) {
+func (r *Reconciler) handleDeletingState(
+	ctx context.Context, req ctrl.Request, kyma *v1beta2.Kyma,
+) (ctrl.Result, error) {
 	if r.WatcherEnabled() {
 		if err := r.SKRWebhookManager.Remove(ctx, kyma); err != nil {
 			return ctrl.Result{}, err

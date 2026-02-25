@@ -49,7 +49,8 @@ func SetupWithManager(mgr manager.Manager,
 			builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{},
 				predicate.LabelChangedPredicate{}))).
 		WithOptions(opts).
-		Complete(declarativev2.NewReconciler(requeueIntervals, rateLimiter, manifestMetrics, mandatoryModulesMetrics, manifestClient,
+		Complete(declarativev2.NewReconciler(
+			requeueIntervals, rateLimiter, manifestMetrics, mandatoryModulesMetrics, manifestClient,
 			orphanDetectionService, specResolver, skrClientCache, skrClient, kcpClient, cachedManifestParser,
 			customStateCheck, skrImagePullSecretName)); err != nil {
 		return fmt.Errorf("failed to setup manager for manifest controller: %w", err)
