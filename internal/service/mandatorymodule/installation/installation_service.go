@@ -73,13 +73,12 @@ func (s *Service) HandleInstallation(ctx context.Context, kyma *v1beta2.Kyma) er
 		return fmt.Errorf("list mandatory modules failed: %w", err)
 	}
 
+	s.mandatoryModuleMetrics.RecordMandatoryModulesCount(len(mandatoryMrms))
 	mandatoryTemplatesByName := make(templatelookup.ModuleTemplatesByModuleName)
-	activeMandatoryMrms := 0
 	for _, mrm := range mandatoryMrms {
 		if !mrm.DeletionTimestamp.IsZero() {
 			continue
 		}
-		activeMandatoryMrms++
 		moduleTemplate, err := s.mtRepo.GetSpecificVersionForModule(ctx, mrm.Name, mrm.Spec.Mandatory.Version)
 		if err != nil {
 			return fmt.Errorf("get ModuleTemplate for mandatory module %s failed: %w", mrm.Name, err)
@@ -96,7 +95,6 @@ func (s *Service) HandleInstallation(ctx context.Context, kyma *v1beta2.Kyma) er
 		mandatoryTemplatesByName[moduleTemplate.Spec.ModuleName] = createMandatoryModuleTemplateInfo(moduleTemplate,
 			nil, ocmId)
 	}
-	s.mandatoryModuleMetrics.RecordMandatoryModulesCount(activeMandatoryMrms)
 	modules := s.moduleParser.GenerateMandatoryModulesFromTemplates(ctx, kyma, mandatoryTemplatesByName)
 	if err := s.manifestCreator.ReconcileManifests(ctx, kyma, modules); err != nil {
 		return fmt.Errorf("reconcile manifests for mandatory modules failed: %w", err)
